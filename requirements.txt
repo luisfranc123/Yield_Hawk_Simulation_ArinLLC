@@ -1,0 +1,20 @@
+# ============================================================
+# YIELD HAWK STRATEGY SIMULATOR
+# Requirements File
+# ============================================================
+# Install all dependencies with:
+#   pip install -r requirements.txt
+# ============================================================
+
+# --- Core App Framework ---
+streamlit >= 1.35.0
+
+# --- Financial Data ---
+yfinance >= 0.2.40
+
+# --- Data Manipulation ---
+pandas >= 2.2.0
+numpy >= 1.26.0
+
+# --- Excel / Reporting (optional, for future exports) ---
+openpyxl >= 3.1.2
