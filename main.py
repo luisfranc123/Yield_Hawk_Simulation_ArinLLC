@@ -2,7 +2,8 @@
 # YIELD HAWK SIMULATOR 
 # =================================================================
 import streamlit as st
-from yield_hawk_simulation import (YieldHawkInputs, 
+from yield_hawk_simulation import (YieldHawkInputs,
+                                   fetch_spx_level, 
                                    inp_assumps,
                                    cash_flow_calc,
                                    savings_comparison,
@@ -76,6 +77,23 @@ st_cap_gains_rate = st.sidebar.slider(
 )/100
 
 # -----------------------------------------------
+# SPX LEVEL - Live Fecthed with manual fallback
+# -----------------------------------------------
+st.sidebar.divider()
+st.sidebar.subheader("SPX Level")
+
+use_manual_spx = st.sidebar.toggle("Enter SPX manually", value = False)
+
+if use_manual_spx:
+    spx_override = st.sidebar.number_input(
+        "SPX Level (manual)", 
+        min_value = 1000.0, max_value = 10000.0, 
+    value = 5500.0, step = 10.0
+    )
+else:
+    spx_override = None
+
+# -----------------------------------------------
 # MAIN — Run all the functions
 # -----------------------------------------------
 inputs = YieldHawkInputs(
@@ -88,6 +106,7 @@ inputs = YieldHawkInputs(
     cost_per_contract = cost_per_contract,
     contract_multiplier = int(contract_multiplier),
     num_scenarios = num_scenarios,
+    spx_override = spx_override, 
 )
 
 st.divider()

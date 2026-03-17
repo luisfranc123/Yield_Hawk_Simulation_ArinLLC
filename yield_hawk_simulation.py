@@ -6,8 +6,29 @@
 import yfinance as yf
 import streamlit as st
 import pandas as pd
+import time
 
+# -----------------------------------------------
+# CASHED SPX FETCH (outside the class)
+# Cashes result for 15 minutes to avoid rate limiting
+# Falls back to a manual input if fetch fails
+# -----------------------------------------------
+@st.cache_data(ttl = 900) #  minutes
+def fetch_spx_level() -> float:
+    """
+    Fetches the latest SPX closing price from Yahoo Finance.
+    Cashed for 15 minutes to avoid rate limiting on cloud deployments.
+    """
+    for attempt in range(3): # retry up to 3 times
+        try:
+            spx_ticker = yf.Ticker("^GSPC")
+            spx_history = spx_ticker.history(period = "1d")
+            if not spx_history.empty:
+                return round(spx_history["Close"].iloc[-1], 2)
+        except Exception:
+            time.sleep(2) # wait 2 seconds before retrying
 
+    return None # return None if all attempts fail
 # -----------------------------------------------
 # SHARED INPUT CONTAINER
 # -----------------------------------------------
@@ -17,7 +38,8 @@ class YieldHawkInputs:
                  spread_width = 1_000,
                  cost_per_contract = 0.01,
                  contract_multiplier = 100,
-                 num_scenarios = 5):
+                 num_scenarios = 5, 
+                 spx_override = None):
 
         self.notional = notional
         self.current_rate = current_rate
@@ -29,11 +51,18 @@ class YieldHawkInputs:
         self.contract_multiplier = contract_multiplier
         self.num_scenarios = num_scenarios
 
-        # Live SPX fetch
-        with st.spinner("Fetching live SPX level..."):
-            spx_ticker = yf.Ticker("^GSPC")
-            spx_history = spx_ticker.history(period = "1d")
-            self.spx_level = round(spx_history["Close"].iloc[-1], 2)
+        # Use manual override if provided, otherwise fetch live
+        if spx_override is not None:
+            self.spx_level = spx_override
+        else:
+            with st.spinner("Fetching live SPX level..."):
+                level = fetch_spx_level()
+                if level is None:
+                    st.error("Could not fetch SPX level from Yahoo Finance. "
+                             "Please enter it manually in the sidebar.")
+                    self.spx_level = 0.0
+                else:
+                    self.spx_level = level
         
         self.notional_per_spread = self.spread_width*self.contract_multiplier
         self.num_spreads = self.notional/self.notional_per_spread
@@ -167,8 +196,8 @@ def savings_comparison(inputs: YieldHawkInputs, cashflows: dict) -> dict:
     col1, col2, col3 = st.columns(3)
     col1.metric("Rate Savings", f"{savings_rate*100:.4f}%", 
                 delta = f"-{savings_rate*100:.2f}% vs current")
-    col2.metric("Period Savings", f"{savings_period:,.2f}")
-    col3.metric("Annual Savings", f"{savings_annual:,.2f}")
+    col2.metric("Period Savings", f"${savings_period:,.2f}")
+    col3.metric("Annual Savings", f"${savings_annual:,.2f}")
     
     # Table:
     df = pd.DataFrame(
