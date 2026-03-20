@@ -71,8 +71,6 @@ inputs = YieldHawkInputs(
 )
 
 st.divider()
-summary = inp_assumps(inputs)
-st.divider()
 cashflows = cash_flow_calc(inputs)
 st.divider()
 comparison = savings_comparison(inputs, cashflows)
