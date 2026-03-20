@@ -59,13 +59,13 @@ else:
 # -----------------------------------------------
 inputs = YieldHawkInputs(
     notional = notional,
-    current_rate = current_rate,
-    hawk_rate = hawk_rate,
-    advisory_rate = advisory_rate,
+    current_rate = 7/100,
+    hawk_rate = 4.3/100,
+    advisory_rate = 0.25/100,
     days = days,
-    spread_width = int(spread_width),
-    cost_per_contract = cost_per_contract,
-    contract_multiplier = int(contract_multiplier),
+    spread_width = 1000,
+    cost_per_contract = 0.01,
+    contract_multiplier = 100,
     num_scenarios = num_scenarios,
     spx_override = spx_override, 
 )
