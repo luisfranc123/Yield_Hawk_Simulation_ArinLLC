@@ -13,7 +13,7 @@ from yield_hawk_simulation import (YieldHawkInputs,
 
 st.set_page_config(page_title="Yield Hawk Simulator", layout="wide")
 st.title("YIELD HAWK STRATEGY SIMULATOR")
-st.caption("Based on ArinLLC Risk Advisors — Box Spread Financing Strategy")
+st.caption("Based on Arin Risk Advisors, LLC — Box Spread Financing Strategy")
 
 # -----------------------------------------------
 # SIDEBAR SLIDERS
