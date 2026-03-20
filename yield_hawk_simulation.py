@@ -90,9 +90,6 @@ def inp_assumps(inputs: YieldHawkInputs) -> dict:
         "Number of Spreads": round(inputs.num_spreads, 1),
     }
 
-    st.subheader("1. Inputs and Assumptions")
-    df = pd.DataFrame(summary_inputs.items(), columns = ["Parameter", "Value"])
-    st.dataframe(df, use_container_width = True, hide_index = True)
     
     return summary_inputs
 
@@ -120,7 +117,7 @@ def cash_flow_calc(inputs: YieldHawkInputs) -> dict:
     advisory_fee_cost = inputs.notional*inputs.advisory_rate*(inputs.days / 365)
 
     # 2.5 Brokerage commissions
-    brokerage_cost = 4* inputs.num_spreads * inputs.cost_per_contract
+    brokerage_cost = 4*inputs.num_spreads*inputs.cost_per_contract
 
     # 2.6 Total all-in financing cost
     total_cost = gross_cost + advisory_fee_cost + brokerage_cost
@@ -138,7 +135,7 @@ def cash_flow_calc(inputs: YieldHawkInputs) -> dict:
         "All-In Annualized Rate (%)": round(allin_rate * 100, 4),
     }
 
-    st.subheader("2. Cash Flow Summary")
+    st.subheader("Cash Flow Summary")
     col1, col2, col3 = st.columns(3)
     col1.metric("Proceeds Today", f"${proceeds_today:,.2f}")
     col2.metric("Total Financing Cost", f"${total_cost:,.2f}")
@@ -149,7 +146,6 @@ def cash_flow_calc(inputs: YieldHawkInputs) -> dict:
         [(k, f"${v:,.2f}" if "$" in k else f"{v}") for k, v in cashflows.items()], 
         columns = ["Item", "Value"]
     )
-    st.dataframe(df, use_container_width = True, hide_index = True)
 
     return cashflows
 
@@ -192,19 +188,12 @@ def savings_comparison(inputs: YieldHawkInputs, cashflows: dict) -> dict:
         "Annual Savings ($)": round(savings_annual, 2),
     }
 
-    st.subheader("3. Savings Comparison")
+    st.subheader("Savings Comparison")
     col1, col2, col3 = st.columns(3)
     col1.metric("Rate Savings", f"{savings_rate*100:.4f}%", 
                 delta = f"-{savings_rate*100:.2f}% vs current")
     col2.metric("Period Savings", f"${savings_period:,.2f}")
     col3.metric("Annual Savings", f"${savings_annual:,.2f}")
-    
-    # Table:
-    df = pd.DataFrame(
-        [(k, f"${v:,.2f}" if "$" in k else f"{v}") for k, v in comparison.items()], 
-        columns = ["Metric", "Value"]
-    )
-    st.dataframe(df, use_container_width = True, hide_index = True)
 
     return comparison
 
@@ -233,44 +222,39 @@ def option_legs(inputs: YieldHawkInputs, cashflows: dict) -> dict:
     legs = {
         "SPX Put (Short)" : {
             "action": "Sell",
-            "type": "Put",
             "strike": upper_strike,
             "contracts": int(-inputs.num_spreads),
             "premium": round(net_per_contract * 0.03, 2),
         },
         "SPX Call (Short)" : {
             "action": "Sell",
-            "type": "Call",
             "strike": lower_strike,
             "contracts": int(-inputs.num_spreads),
             "premium": round(net_per_contract * 0.13, 2),
         },
         "SPX Put (Long)" : {
             "action" : "Buy",
-            "type" : "Put",
             "strike" : lower_strike,
             "contracts" : int(inputs.num_spreads),
             "premium" : round(net_per_contract * 0.30, 2),
         },
         "SPX Call (Long)" : {
             "action" : "Buy",
-            "type" : "Call",
             "strike" : upper_strike,
             "contracts": int(inputs.num_spreads),
             "premium" : round(net_per_contract * 0.54, 2),
         },
     }
 
-    st.subheader("4. Option Legs")
+    st.subheader("Option Legs")
     col1, col2, col3 = st.columns(3)
     col1.metric("Lower Strike", f"{lower_strike:,}")
     col2.metric("Upper Strike", f"{upper_strike:,}")
     col3.metric("SPX at Trade", f"{inputs.spx_level:,}")
-
-    df = pd.DataFrame(legs).T.reset_index()
+	
+	df = pd.DataFrame(legs).T.reset_index()
     df.columns = ["Leg", "Action", "Type", "Strike", "Contracts", "Premium"]
-    st.dataframe(df, use_container_width = True, hide_index = True)
-
+    st.dataframe(df.groupby("action"), use_container_width = False, hide_index = True)
 
     return legs
 
@@ -322,20 +306,13 @@ def scenario_analysis(inputs: YieldHawkInputs, legs: dict, cashflows: dict) -> d
 
     # Build display DataFrame
     df = pd.DataFrame(results).T
-    net_row = {label: round(sum(results[leg][label] for leg in results), 2) for label in scenarios}
-    settlement_row = {label: -inputs.notional for label in scenarios}
-
-    net_df = pd.DataFrame([net_row], index = ["Net Market Value"])
-    sett_df = pd.DataFrame([settlement_row], index = ["Settlement (Outflow)"])
-    full_df = pd.concat([df, net_df, sett_df])
-
-    st.subheader("5. Scenario Analysis")
-    st.dataframe(full_df.style.format("${:,.2f}"), use_container_width = True)
+    st.subheader("Scenario Analysis")
+    st.dataframe(df.style.format("${:,.2f}"), use_container_width = True)
     
     allin_rate = cashflows["All-In Annualized Rate (%)"]
     st.info(f"All-In Financing Rate: **{allin_rate:.4f}%** — Identical across all scenarios (market neutral)")
 
-    return {"net_values": net_row, "settlement": -inputs.notional}
+    return df 
 
 # -----------------------------------------------
 # FUNCTION 6: Final Report
@@ -400,15 +377,6 @@ def final_report(inputs: YieldHawkInputs,
         [(k, f"${v:,.2f}" if "$" in k else f"{v}%") for k, v in tax_report.items()],
         columns=["Metric", "Value"]
     )
-    st.dataframe(df, use_container_width = True, hide_index = True)
-
-    st.success(
-        f"**Gross Rate:** {gross_rate*100:.4f}%  |  "
-        f"**After-Tax Rate:** {aftertax_rate*100:.4f}%  |  "
-        f"**Annual Savings:** ${aftertax_savings:,.2f}"
-    )
-
-
     return tax_report
 
 		
