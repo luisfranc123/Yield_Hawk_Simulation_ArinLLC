@@ -23,58 +23,19 @@ st.sidebar.header("Strategy Inputs")
 notional = st.sidebar.number_input(
     "Notional (Loan Amount $)", 
     min_value = 100_000, max_value = 100_000_000, 
-    value = 10_000_000, step = 5_000
+    value = 1_000_000, step = 10_000
 )
-
-current_rate = st.sidebar.slider(
-    "Current Borrowing Rate (%)", 
-    min_value = 0.0, max_value = 20.0, value = 5.0, step = 0.1
-)/100
-
-hawk_rate = st.sidebar.slider(
-    "Yield Hawk Rate gross (%)", 
-    min_value = 0.0, max_value = 20.0, value = 4.3, step = 0.1
-)/100
-
-advisory_rate = st.sidebar.slider(            
-    "Advisory Fee (%)",
-    min_value=0.0, max_value=5.0, value=0.5, step=0.05
-)/100
 
 days = st.sidebar.slider(
     "Borrowing Period (days)", 
     min_value = 1, max_value = 365, value = 50, step = 1
 )
 
-spread_width = st.sidebar.number_input(
-    "Spread Width (pts)", 
-    min_value = 100, max_value = 5_000, value = 1_000, step = 100
-)
-
-cost_per_contract = st.sidebar.number_input(
-    "Cost per Contract ($)", 
-    min_value = 0.0, max_value = 10.0, value = 0.01, step = 0.01
-)
-
-contract_multiplier = st.sidebar.number_input(
-    "Contract Multiplier", 
-    min_value = 1, max_value = 1_000, value = 100, step = 10
-)
 
 num_scenarios = st.sidebar.slider(
     "Number of Scenarios",
     min_value = 3, max_value = 10, value = 5, step = 1 
 )
-
-lt_cap_gains_rate = st.sidebar.slider(
-    "Long-Term Cap Gains Rate (%)",
-    min_value = 0.0, max_value = 40.0, value = 20.0, step = 0.5
-)/100
-
-st_cap_gains_rate = st.sidebar.slider(
-    "Short-Term Cap Gains Rate (%)",
-    min_value = 0.0, max_value = 60.0, value = 37.0, step = 0.5
-)/100
 
 # -----------------------------------------------
 # SPX LEVEL - Live Fecthed with manual fallback
