@@ -37,6 +37,9 @@ num_scenarios = st.sidebar.slider(
     min_value = 3, max_value = 10, value = 5, step = 1 
 )
 
+lt_cap_gains_rate = 20/100
+lt_cap_gains_rate = 37/100
+
 # -----------------------------------------------
 # SPX LEVEL - Live Fecthed with manual fallback
 # -----------------------------------------------
