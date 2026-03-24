@@ -283,7 +283,7 @@ def scenario_analysis(inputs: YieldHawkInputs, legs: dict, cashflows: dict) -> d
     step = (range_end - range_start) // (inputs.num_scenarios - 1)
 
     scenarios = {
-        f"SPX @ {range_start + i * step:,}" : range_start + i * step
+        f"SPX at {range_start + i * step:,}" : range_start + i * step
         for i in range(inputs.num_scenarios)
     }
 
