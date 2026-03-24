@@ -352,9 +352,9 @@ def final_report(inputs: YieldHawkInputs,
     aftertax_savings = current_cost_annual - aftertax_cost_annual
 
     tax_report = {
-        "Long-Term Cap Gains Rate (%)" : round(lt_cap_gains_rate * 100, 2),
-        "Short-Term Cap Gains Rate (%)": round(st_cap_gains_rate * 100, 2),
-        "Blended Tax Rate (%)": round(blended_tax_rate * 100, 4),
+        #"Long-Term Cap Gains Rate (%)" : round(lt_cap_gains_rate * 100, 2),
+        #"Short-Term Cap Gains Rate (%)": round(st_cap_gains_rate * 100, 2),
+        #"Blended Tax Rate (%)": round(blended_tax_rate * 100, 4),
         "Gross Borrowing Rate (%)": round(gross_rate * 100, 4),
         "After-Tax Borrowing Rate (%)": round(aftertax_rate * 100, 4),
         "After-Tax Cost per Period ($)": round(aftertax_cost_period, 2),
@@ -374,5 +374,9 @@ def final_report(inputs: YieldHawkInputs,
         columns=["Metric", "Value"]
     )
     st.dataframe(df, use_container_width=True, hide_index=True)
-
+    st.info(
+    f"- **Long-Term Cap Gains Rate:** {(lt_cap_gains_rate*100):.4f}%\n"
+    f"- **Short-Term Cap Gains Rate:** {(st_cap_gains_rate*100):.4f}%\n"
+    f"- **Blended Tax Rate:** {(blended_tax_rate*100):.4f}%"
+)
     return tax_report
