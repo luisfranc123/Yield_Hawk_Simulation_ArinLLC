@@ -11,7 +11,7 @@ from yield_hawk_simulation import (YieldHawkInputs,
                                    scenario_analysis, 
                                    final_report)
 
-st.set_page_config(page_title = "Yield Hawk Simulator", layout="wide")
+st.set_page_config(page_title = "Yield Hawk Simulator", layout = "wide")
 st.title("YIELD HAWK STRATEGY SIMULATOR")
 st.caption("Based on Arin Risk Advisors, LLC — Box Spread Financing Strategy")
 
@@ -26,7 +26,7 @@ notional = st.sidebar.number_input(
     value = 1_000_000, step = 10_000
 )
 
-days = st.sidebar.slider(
+days = st.sidebar.number_input(
     "Borrowing Period (days)", 
     min_value = 1, max_value = 365, value = 50, step = 1
 )
@@ -42,10 +42,16 @@ num_scenarios = st.sidebar.slider(
 # SPX LEVEL - Live Fecthed with manual fallback
 # -----------------------------------------------
 st.sidebar.divider()
-st.sidebar.subheader("SPX Level")
 st.sidebar.subheader("Tax Rates")
-lt_cap_gains_rate = 20/100
-st_cap_gains_rate = 37/100
+lt_cap_gains_rate = st.sidebar.number_input(
+    "Long-Term Cap Gains Rate (decimal)", 
+    min_value = 10/100, max_value = 60/100, value = 20/100, step = 1
+    )
+st_cap_gains_rate = st.sidebar.number_input(
+    "Short-Term Cap Gains Rate (decimal)", 
+    min_value = 10/100, max_value = 60/100, value = 37/100, step = 1
+    )
+st.sidebar.subheader("SPX Level")
 use_manual_spx = st.sidebar.toggle("Enter SPX manually", value = False)
 
 if use_manual_spx:
