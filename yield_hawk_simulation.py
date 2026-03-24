@@ -132,7 +132,7 @@ def cash_flow_calc(inputs: YieldHawkInputs) -> dict:
         "Brokerage Commission Cost ($)": round(brokerage_cost, 2),
         "Total All-In Financing Cost ($)": round(total_cost, 2),
         "All-In Annualized Rate (%)": round(allin_rate * 100, 4),
-
+    }
     st.subheader("Cash Flow Summary")
     col1, col2, col3 = st.columns(3)
     col1.metric("Proceeds Today", f"${proceeds_today:,.2f}")
