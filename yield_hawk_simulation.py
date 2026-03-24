@@ -248,16 +248,6 @@ def option_legs(inputs: YieldHawkInputs, cashflows: dict) -> dict:
         },
     }
 
-    st.subheader("Option Legs")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Lower Strike", f"{lower_strike:,}")
-    col2.metric("Upper Strike", f"{upper_strike:,}")
-    col3.metric("SPX at Trade", f"{inputs.spx_level:,}")
-
-    df = pd.DataFrame(legs).T.reset_index()
-    df.columns = ["Leg", "Action", "Type", "Strike", "Contracts", "Premium"]
-    st.dataframe(df, use_container_width=True, hide_index=True)
-
     return legs
 
 
