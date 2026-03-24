@@ -134,7 +134,7 @@ def cash_flow_calc(inputs: YieldHawkInputs) -> dict:
 
     st.subheader("Cash Flow Summary")
     col1, col2, col3 = st.columns(3)
-    col1.metric("Proceeds Today", f"${proceeds_today:,.2f}")
+    #col1.metric("Proceeds Today", f"${proceeds_today:,.2f}")
     col2.metric("Total Financing Cost", f"${total_cost:,.2f}")
     col3.metric("All-In Rate (ann.)", f"{allin_rate*100:.4f}%")
 
