@@ -73,6 +73,8 @@ inputs = YieldHawkInputs(
     spx_override = spx_override, 
 )
 
+# Define Option legs to compute scenarios
+legs = option_legs(inputs, cashflows)
 st.divider()
 cashflows = cash_flow_calc(inputs)
 st.divider()
