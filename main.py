@@ -78,8 +78,6 @@ cashflows = cash_flow_calc(inputs)
 st.divider()
 comparison = savings_comparison(inputs, cashflows)
 st.divider()
-legs = option_legs(inputs, cashflows)
-st.divider()
 scenarios  = scenario_analysis(inputs, legs, cashflows)
 st.divider()
 report = final_report(inputs, cashflows, comparison, 
