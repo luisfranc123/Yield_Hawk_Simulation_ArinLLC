@@ -45,7 +45,7 @@ st.sidebar.divider()
 st.sidebar.subheader("SPX Level")
 st.sidebar.subheader("Tax Rates")
 lt_cap_gains_rate = 20/100
-lt_cap_gains_rate = 37/100
+st_cap_gains_rate = 37/100
 use_manual_spx = st.sidebar.toggle("Enter SPX manually", value = False)
 
 if use_manual_spx:
