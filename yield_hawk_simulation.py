@@ -352,15 +352,9 @@ def final_report(inputs: YieldHawkInputs,
     aftertax_savings = current_cost_annual - aftertax_cost_annual
 
     tax_report = {
-        #"Long-Term Cap Gains Rate (%)" : round(lt_cap_gains_rate * 100, 2),
-        #"Short-Term Cap Gains Rate (%)": round(st_cap_gains_rate * 100, 2),
-        #"Blended Tax Rate (%)": round(blended_tax_rate * 100, 4),
-        "Gross Borrowing Rate (%)": round(gross_rate * 100, 4),
-        "After-Tax Borrowing Rate (%)": round(aftertax_rate * 100, 4),
         "After-Tax Cost per Period ($)": round(aftertax_cost_period, 2),
         "After-Tax Cost Annual ($)": round(aftertax_cost_annual, 2),
         "Current Rate Annual Cost ($)": round(current_cost_annual, 2),
-        "After-Tax Annual Savings ($)": round(aftertax_savings, 2),
     }
 
     st.subheader("Final Report (Tax-Adjusted)")
@@ -378,5 +372,5 @@ def final_report(inputs: YieldHawkInputs,
     f"- **Long-Term Cap Gains Rate:** {(lt_cap_gains_rate*100):.4f}%\n"
     f"- **Short-Term Cap Gains Rate:** {(st_cap_gains_rate*100):.4f}%\n"
     f"- **Blended Tax Rate:** {(blended_tax_rate*100):.4f}%"
-)
+    )
     return tax_report
