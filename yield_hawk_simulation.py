@@ -126,7 +126,7 @@ def cash_flow_calc(inputs: YieldHawkInputs) -> dict:
     cashflows = {
         "Proceeds Received Today ($)": round(proceeds_today, 2),
         "Obligation at Expiration ($)": round(obligation, 2),
-        "Adivory Rate (%)": inputs.advisory_rate*100,
+        "Adivsory Rate (%)": summary_inputs["Advisory Fee (%)"],
         "Gross Financing Cost ($)": round(gross_cost, 2),
         "Advisory Fee Cost ($)": round(advisory_fee_cost, 2),
         "Brokerage Commission Cost ($)": round(brokerage_cost, 2),
