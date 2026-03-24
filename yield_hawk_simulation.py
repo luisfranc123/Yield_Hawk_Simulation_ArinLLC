@@ -369,8 +369,8 @@ def final_report(inputs: YieldHawkInputs,
     )
     st.dataframe(df, use_container_width=True, hide_index=True)
     st.info(
-    f"- **Long-Term Cap Gains Rate:** {(lt_cap_gains_rate*100):.4f}%\n"
-    f"- **Short-Term Cap Gains Rate:** {(st_cap_gains_rate*100):.4f}%\n"
-    f"- **Blended Tax Rate:** {(blended_tax_rate*100):.4f}%"
+    f"- **Long-Term Cap Gains Rate:** {(lt_cap_gains_rate*100):.2f}%\n"
+    f"- **Short-Term Cap Gains Rate:** {(st_cap_gains_rate*100):.2f}%\n"
+    f"- **Blended Tax Rate:** {(blended_tax_rate*100):.2f}%"
     )
     return tax_report
