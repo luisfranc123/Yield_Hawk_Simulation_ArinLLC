@@ -2,7 +2,6 @@
 # OPTION LEGS PAGE
 # Displayed as a separate page in the Streamlit sidebar
 # ============================================================
-
 import streamlit as st
 import pandas as pd
 from yield_hawk_simulation import (YieldHawkInputs,
