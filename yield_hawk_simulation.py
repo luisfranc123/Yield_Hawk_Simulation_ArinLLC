@@ -9,26 +9,25 @@ import pandas as pd
 import time
 
 # -----------------------------------------------
-# CASHED SPX FETCH (outside the class)
-# Cashes result for 15 minutes to avoid rate limiting
-# Falls back to a manual input if fetch fails
+# CACHED SPX FETCH (outside the class)
 # -----------------------------------------------
-@st.cache_data(ttl = 900) #  minutes
+@st.cache_data(ttl=900)
 def fetch_spx_level() -> float:
     """
     Fetches the latest SPX closing price from Yahoo Finance.
-    Cashed for 15 minutes to avoid rate limiting on cloud deployments.
+    Cached for 15 minutes to avoid rate limiting on cloud deployments.
     """
-    for attempt in range(3): # retry up to 3 times
+    for attempt in range(3):
         try:
             spx_ticker = yf.Ticker("^GSPC")
             spx_history = spx_ticker.history(period = "1d")
             if not spx_history.empty:
                 return round(spx_history["Close"].iloc[-1], 2)
         except Exception:
-            time.sleep(2) # wait 2 seconds before retrying
+            time.sleep(2)
+    return None
 
-    return None # return None if all attempts fail
+
 # -----------------------------------------------
 # SHARED INPUT CONTAINER
 # -----------------------------------------------
@@ -38,7 +37,7 @@ class YieldHawkInputs:
                  spread_width = 1_000,
                  cost_per_contract = 0.01,
                  contract_multiplier = 100,
-                 num_scenarios = 5, 
+                 num_scenarios = 5,
                  spx_override = None):
 
         self.notional = notional
@@ -63,9 +62,9 @@ class YieldHawkInputs:
                     self.spx_level = 0.0
                 else:
                     self.spx_level = level
-        
-        self.notional_per_spread = self.spread_width*self.contract_multiplier
-        self.num_spreads = self.notional/self.notional_per_spread
+
+        self.notional_per_spread = self.spread_width * self.contract_multiplier
+        self.num_spreads = self.notional / self.notional_per_spread
 
 
 # -----------------------------------------------
@@ -90,10 +89,6 @@ def inp_assumps(inputs: YieldHawkInputs) -> dict:
         "Number of Spreads": round(inputs.num_spreads, 1),
     }
 
-    st.subheader("1. Inputs and Assumptions")
-    df = pd.DataFrame(summary_inputs.items(), columns = ["Parameter", "Value"])
-    st.dataframe(df, use_container_width = True, hide_index = True)
-    
     return summary_inputs
 
 
@@ -108,7 +103,7 @@ def cash_flow_calc(inputs: YieldHawkInputs) -> dict:
         inputs (YieldHawkInputs): shared input object
     """
     # 2.1 Proceeds received today
-    proceeds_today = inputs.notional/(1 + inputs.hawk_rate*(inputs.days/365))
+    proceeds_today = inputs.notional / (1 + inputs.hawk_rate * (inputs.days / 365))
 
     # 2.2 Obligation at expiration (always full notional)
     obligation = inputs.notional
@@ -117,19 +112,19 @@ def cash_flow_calc(inputs: YieldHawkInputs) -> dict:
     gross_cost = obligation - proceeds_today
 
     # 2.4 Advisory fee prorated for borrowing period
-    advisory_fee_cost = inputs.notional*inputs.advisory_rate*(inputs.days / 365)
+    advisory_fee_cost = inputs.notional * inputs.advisory_rate * (inputs.days / 365)
 
     # 2.5 Brokerage commissions
-    brokerage_cost = 4* inputs.num_spreads * inputs.cost_per_contract
+    brokerage_cost = 4 * inputs.num_spreads * inputs.cost_per_contract
 
     # 2.6 Total all-in financing cost
     total_cost = gross_cost + advisory_fee_cost + brokerage_cost
 
     # 2.7 Effective annualized rate
-    allin_rate = (total_cost/inputs.notional)*(365/inputs.days)
+    allin_rate = (total_cost / inputs.notional) * (365 / inputs.days)
 
     cashflows = {
-        "Proceeds Received Today ($)" : round(proceeds_today, 2),
+        "Proceeds Received Today ($)": round(proceeds_today, 2),
         "Obligation at Expiration ($)": round(obligation, 2),
         "Gross Financing Cost ($)": round(gross_cost, 2),
         "Advisory Fee Cost ($)": round(advisory_fee_cost, 2),
@@ -138,18 +133,17 @@ def cash_flow_calc(inputs: YieldHawkInputs) -> dict:
         "All-In Annualized Rate (%)": round(allin_rate * 100, 4),
     }
 
-    st.subheader("2. Cash Flow Summary")
+    st.subheader("Cash Flow Summary")
     col1, col2, col3 = st.columns(3)
     col1.metric("Proceeds Today", f"${proceeds_today:,.2f}")
     col2.metric("Total Financing Cost", f"${total_cost:,.2f}")
     col3.metric("All-In Rate (ann.)", f"{allin_rate*100:.4f}%")
 
-    # Table:
     df = pd.DataFrame(
-        [(k, f"${v:,.2f}" if "$" in k else f"{v}") for k, v in cashflows.items()], 
-        columns = ["Item", "Value"]
+        [(k, f"${v:,.2f}" if "$" in k else f"{v}") for k, v in cashflows.items()],
+        columns=["Item", "Value"]
     )
-    st.dataframe(df, use_container_width = True, hide_index = True)
+    st.dataframe(df, use_container_width=True, hide_index=True)
 
     return cashflows
 
@@ -171,7 +165,7 @@ def savings_comparison(inputs: YieldHawkInputs, cashflows: dict) -> dict:
     current_cost_annual = inputs.notional * inputs.current_rate
 
     # Yield Hawk cost
-    hawk_cost_period = cashflows["Total All-In Financing Cost ($)"]
+    hawk_cost_period  = cashflows["Total All-In Financing Cost ($)"]
     hawk_rate_annual = cashflows["All-In Annualized Rate (%)"] / 100
     hawk_cost_annual = inputs.notional * hawk_rate_annual
 
@@ -181,10 +175,10 @@ def savings_comparison(inputs: YieldHawkInputs, cashflows: dict) -> dict:
     savings_rate = inputs.current_rate - hawk_rate_annual
 
     comparison = {
-        "Financing Rate — Current (%)": round(inputs.current_rate * 100, 2),
+        "Financing Rate — Current (%)" : round(inputs.current_rate * 100, 2),
         "Financing Rate — Yield Hawk (%)": round(hawk_rate_annual * 100, 4),
-        "Rate Savings (%)" : round(savings_rate * 100, 4),
-        "Cost (Period) — Current ($)" : round(current_cost_period, 2),
+        "Rate Savings (%)": round(savings_rate * 100, 4),
+        "Cost (Period) — Current ($)": round(current_cost_period, 2),
         "Cost (Period) — Yield Hawk ($)": round(hawk_cost_period, 2),
         "Savings per Period ($)": round(savings_period, 2),
         "Cost (Annual) — Current ($)": round(current_cost_annual, 2),
@@ -192,19 +186,12 @@ def savings_comparison(inputs: YieldHawkInputs, cashflows: dict) -> dict:
         "Annual Savings ($)": round(savings_annual, 2),
     }
 
-    st.subheader("3. Savings Comparison")
+    st.subheader("Savings Comparison")
     col1, col2, col3 = st.columns(3)
-    col1.metric("Rate Savings", f"{savings_rate*100:.4f}%", 
-                delta = f"-{savings_rate*100:.2f}% vs current")
+    col1.metric("Rate Savings", f"{savings_rate*100:.4f}%",
+                delta=f"-{savings_rate*100:.2f}% vs current")
     col2.metric("Period Savings", f"${savings_period:,.2f}")
     col3.metric("Annual Savings", f"${savings_annual:,.2f}")
-    
-    # Table:
-    df = pd.DataFrame(
-        [(k, f"${v:,.2f}" if "$" in k else f"{v}") for k, v in comparison.items()], 
-        columns = ["Metric", "Value"]
-    )
-    st.dataframe(df, use_container_width = True, hide_index = True)
 
     return comparison
 
@@ -218,59 +205,48 @@ def option_legs(inputs: YieldHawkInputs, cashflows: dict) -> dict:
     live SPX level to determine realistic strike prices.
 
     Args:
-        inputs    (YieldHawkInputs): shared input object
+        inputs (YieldHawkInputs): shared input object
         cashflows (dict): output from cash_flow_calc()
     """
     # Strike prices
-    lower_strike = (int(inputs.spx_level)//inputs.spread_width)*inputs.spread_width
+    lower_strike = (int(inputs.spx_level) // inputs.spread_width) * inputs.spread_width
     upper_strike = lower_strike + inputs.spread_width
 
     # Premium per leg
     proceeds_today = cashflows["Proceeds Received Today ($)"]
-    net_per_spread = proceeds_today/inputs.num_spreads
-    net_per_contract = net_per_spread/inputs.contract_multiplier
+    net_per_spread = proceeds_today / inputs.num_spreads
+    net_per_contract = net_per_spread / inputs.contract_multiplier
 
     legs = {
         "SPX Put (Short)" : {
-            "action": "Sell",
-            "type": "Put",
-            "strike": upper_strike,
-            "contracts": int(-inputs.num_spreads),
-            "premium": round(net_per_contract * 0.03, 2),
+            "action"    : "Sell",
+            "type"      : "Put",
+            "strike"    : upper_strike,
+            "contracts" : int(-inputs.num_spreads),
+            "premium"   : round(net_per_contract * 0.03, 2),
         },
         "SPX Call (Short)" : {
-            "action": "Sell",
-            "type": "Call",
-            "strike": lower_strike,
-            "contracts": int(-inputs.num_spreads),
-            "premium": round(net_per_contract * 0.13, 2),
+            "action"    : "Sell",
+            "type"      : "Call",
+            "strike"    : lower_strike,
+            "contracts" : int(-inputs.num_spreads),
+            "premium"   : round(net_per_contract * 0.13, 2),
         },
         "SPX Put (Long)" : {
-            "action" : "Buy",
-            "type" : "Put",
-            "strike" : lower_strike,
+            "action"    : "Buy",
+            "type"      : "Put",
+            "strike"    : lower_strike,
             "contracts" : int(inputs.num_spreads),
-            "premium" : round(net_per_contract * 0.30, 2),
+            "premium"   : round(net_per_contract * 0.30, 2),
         },
         "SPX Call (Long)" : {
-            "action" : "Buy",
-            "type" : "Call",
-            "strike" : upper_strike,
-            "contracts": int(inputs.num_spreads),
-            "premium" : round(net_per_contract * 0.54, 2),
+            "action"    : "Buy",
+            "type"      : "Call",
+            "strike"    : upper_strike,
+            "contracts" : int(inputs.num_spreads),
+            "premium"   : round(net_per_contract * 0.54, 2),
         },
     }
-
-    st.subheader("4. Option Legs")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Lower Strike", f"{lower_strike:,}")
-    col2.metric("Upper Strike", f"{upper_strike:,}")
-    col3.metric("SPX at Trade", f"{inputs.spx_level:,}")
-
-    df = pd.DataFrame(legs).T.reset_index()
-    df.columns = ["Leg", "Action", "Type", "Strike", "Contracts", "Premium"]
-    st.dataframe(df, use_container_width = True, hide_index = True)
-
 
     return legs
 
@@ -285,15 +261,15 @@ def scenario_analysis(inputs: YieldHawkInputs, legs: dict, cashflows: dict) -> d
 
     Args:
         inputs (YieldHawkInputs): shared input object
-        legs (dict) : output from option_legs()
-        cashflows (dict) : output from cash_flow_calc()
+        legs (dict): output from option_legs()
+        cashflows(dict): output from cash_flow_calc()
     """
     lower_strike = legs["SPX Put (Long)"]["strike"]
     upper_strike = legs["SPX Call (Long)"]["strike"]
 
     # Dynamic scenario generation
-    range_start = lower_strike - 2*inputs.spread_width
-    range_end = upper_strike + 2*inputs.spread_width
+    range_start = lower_strike - 2 * inputs.spread_width
+    range_end = upper_strike + 2 * inputs.spread_width
     step = (range_end - range_start) // (inputs.num_scenarios - 1)
 
     scenarios = {
@@ -306,7 +282,7 @@ def scenario_analysis(inputs: YieldHawkInputs, legs: dict, cashflows: dict) -> d
     for leg_name, details in legs.items():
         row = {}
         for label, spx_final in scenarios.items():
-            strike = details["strike"]
+            strike    = details["strike"]
             contracts = details["contracts"]
 
             if details["type"] == "Call":
@@ -314,83 +290,64 @@ def scenario_analysis(inputs: YieldHawkInputs, legs: dict, cashflows: dict) -> d
             else:
                 payoff = max(strike - spx_final, 0)
 
-            value = payoff * contracts * inputs.contract_multiplier
+            value      = payoff * contracts * inputs.contract_multiplier
             row[label] = round(value, 2)
 
         results[leg_name] = row
-        
 
-    # Build display DataFrame
     df = pd.DataFrame(results).T
-    net_row = {label: round(sum(results[leg][label] for leg in results), 2) for label in scenarios}
-    settlement_row = {label: -inputs.notional for label in scenarios}
-
-    net_df = pd.DataFrame([net_row], index = ["Net Market Value"])
-    sett_df = pd.DataFrame([settlement_row], index = ["Settlement (Outflow)"])
-    full_df = pd.concat([df, net_df, sett_df])
-
-    st.subheader("5. Scenario Analysis")
-    st.dataframe(full_df.style.format("${:,.2f}"), use_container_width = True)
-    
     allin_rate = cashflows["All-In Annualized Rate (%)"]
+
+    st.subheader("Scenario Analysis")
+    st.dataframe(df.style.format("${:,.2f}"), use_container_width=True)
     st.info(f"All-In Financing Rate: **{allin_rate:.4f}%** — Identical across all scenarios (market neutral)")
 
-    return {"net_values": net_row, "settlement": -inputs.notional}
+    return df
+
 
 # -----------------------------------------------
-# FUNCTION 6: Final Report
+# FUNCTION 6: Final Report with Tax Adjustment
 # -----------------------------------------------
-
 def final_report(inputs: YieldHawkInputs,
                  cashflows: dict,
-                 comparison: dict, 
-                 lt_cap_gains_rate: float, 
+                 comparison: dict,
+                 lt_cap_gains_rate: float,
                  st_cap_gains_rate: float) -> dict:
     """
     Produces a final summary report including the Section 1256
     tax-adjusted borrowing cost.
+
     Args:
-        - inputs (YieldHawkInputs): shared input object
-        - cashflows (dict): output from cash_flow_calc()
-        - comparison (dict): output from savings_comparison()
+        inputs (YieldHawkInputs): shared input object
+        cashflows (dict): output from cash_flow_calc()
+        comparison (dict): output from savings_comparison()
+        lt_cap_gains_raten (float): long-term capital gains rate
+        st_cap_gains_rate  (float): short-term capital gains rate
     """
-    # --- Tax Rate Inputs ---
-    # Note: These rates are subject to change to match the client's actual tax situation.
+    # Section 1256 blended rate: 60% LT + 40% ST
+    blended_tax_rate = 0.60 * lt_cap_gains_rate + 0.40 * st_cap_gains_rate
 
-    # --- Blended Tax Rate ---
-    blended_tax_rate = 0.60*lt_cap_gains_rate + 0.40*st_cap_gains_rate
+    # Gross all-in borrowing rate
+    gross_rate = cashflows["All-In Annualized Rate (%)"] / 100
 
-    # --- Gross All-In Borrowing Rate ---
-    gross_rate = cashflows["All-In Annualized Rate (%)"]/100
+    # After-tax borrowing rate
+    aftertax_rate = gross_rate * (1 - blended_tax_rate)
 
-    # --- After-Tax Borrowing Rate ---
-    aftertax_rate = gross_rate*(1 - blended_tax_rate)
+    # After-tax dollar costs
+    aftertax_cost_period = inputs.notional * aftertax_rate * (inputs.days / 365)
+    aftertax_cost_annual = inputs.notional * aftertax_rate
 
-    # --- After-Tax Dollar Cost ---
-    # What the borrowing actually costs in after-tax dollars
-    aftertax_cost_period = inputs.notional*aftertax_rate*(inputs.days / 365)
-    aftertax_cost_annual = inputs.notional*aftertax_rate
-
-    # --- After-Tax Savings vs Current Rate ---
-    current_cost_annual = comparison["Cost (Annual) — Current ($)"]
+    # After-tax savings vs current rate
+    current_cost_annual  = comparison["Cost (Annual) — Current ($)"]
     aftertax_savings = current_cost_annual - aftertax_cost_annual
 
-    # --- Store in Dictionary ---
     tax_report = {
-        "Long-Term Cap Gains Rate (%)": round(lt_cap_gains_rate * 100, 2),
-        "Short-Term Cap Gains Rate (%)": round(st_cap_gains_rate * 100, 2),
-        "Blended Rate (%)": round(blended_tax_rate * 100, 4),
-        "Gross Borrowing Rate (%)": round(gross_rate * 100, 4),
-        "After-Tax Borrowing Rate (%)": round(aftertax_rate * 100, 4),
         "After-Tax Cost per Period ($)": round(aftertax_cost_period, 2),
         "After-Tax Cost Annual ($)": round(aftertax_cost_annual, 2),
         "Current Rate Annual Cost ($)": round(current_cost_annual, 2),
-        "After-Tax Annual Savings ($)": round(aftertax_savings, 2),
     }
 
-    # --- Print Final Report ---
-    st.subheader("6. Final Report (Tax-Adjusted)")
-
+    st.subheader("Final Report (Tax-Adjusted)")
     col1, col2, col3 = st.columns(3)
     col1.metric("Gross Rate", f"{gross_rate*100:.4f}%")
     col2.metric("After-Tax Rate", f"{aftertax_rate*100:.4f}%")
@@ -400,24 +357,10 @@ def final_report(inputs: YieldHawkInputs,
         [(k, f"${v:,.2f}" if "$" in k else f"{v}%") for k, v in tax_report.items()],
         columns=["Metric", "Value"]
     )
-    st.dataframe(df, use_container_width = True, hide_index = True)
-
-    st.success(
-        f"**Gross Rate:** {gross_rate*100:.4f}%  |  "
-        f"**After-Tax Rate:** {aftertax_rate*100:.4f}%  |  "
-        f"**Annual Savings:** ${aftertax_savings:,.2f}"
+    st.dataframe(df, use_container_width=True, hide_index=True)
+    st.info(
+    f"- **Long-Term Cap Gains Rate:** {(lt_cap_gains_rate*100):.2f}%\n"
+    f"- **Short-Term Cap Gains Rate:** {(st_cap_gains_rate*100):.2f}%\n"
+    f"- **Blended Tax Rate:** {(blended_tax_rate*100):.2f}%"
     )
-
-
     return tax_report
-
-		
-
-		
-	
-    
-
-
-    
-
-    
