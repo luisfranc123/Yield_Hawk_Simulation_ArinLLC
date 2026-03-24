@@ -37,11 +37,6 @@ num_scenarios = st.sidebar.slider(
     min_value = 3, max_value = 10, value = 5, step = 1 
 )
 
-
-# -----------------------------------------------
-# SPX LEVEL - Live Fecthed with manual fallback
-# -----------------------------------------------
-st.sidebar.divider()
 st.sidebar.subheader("Tax Rates")
 lt_cap_gains_rate = st.sidebar.number_input(
     "Long-Term Cap Gains Rate (decimal)", 
@@ -51,6 +46,10 @@ st_cap_gains_rate = st.sidebar.number_input(
     "Short-Term Cap Gains Rate (decimal)", 
     min_value = 10/100, max_value = 60/100, value = 37/100, step = 1
     )
+# -----------------------------------------------
+# SPX LEVEL - Live Fecthed with manual fallback
+# -----------------------------------------------
+st.sidebar.divider()
 st.sidebar.subheader("SPX Level")
 use_manual_spx = st.sidebar.toggle("Enter SPX manually", value = False)
 
