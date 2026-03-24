@@ -2,6 +2,7 @@
 # YIELD HAWK SIMULATOR 
 # =================================================================
 import streamlit as st
+import option_legs.py
 from yield_hawk_simulation import (YieldHawkInputs,
                                    fetch_spx_level, 
                                    inp_assumps,
