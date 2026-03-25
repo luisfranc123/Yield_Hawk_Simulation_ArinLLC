@@ -4,6 +4,8 @@
 # ============================================================
 import streamlit as st
 import pandas as pd
+import time
+from datetime import date, timedelta
 from yield_hawk_simulation import (YieldHawkInputs,
                                    fetch_spx_level,
                                    cash_flow_calc,
@@ -69,6 +71,9 @@ legs = option_legs(inputs, cashflows)
 #-----------------------------------------------
 # DISPLAY OPTION LEGS
 # -----------------------------------------------
+lower_strike = (int(inputs.spx_level)//inputs.spread_width)*inputs.spread_width
+upper_strike = lower_strike + inputs.spread_width
+
 st.subheader("Option Legs")
 col1, col2, col3 = st.columns(3)
 col1.metric("Lower Strike", f"{lower_strike:,}")
