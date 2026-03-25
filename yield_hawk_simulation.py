@@ -5,10 +5,50 @@
 
 import yfinance as yf
 import streamlit as st
+import numpy as np
 import pandas as pd
 import time
 from datetime import date
+from scipy.stats import norm
 
+# -----------------------------------------------
+# BLACK-SCHOLES PRICING
+# ----------------------------------------------
+def black_scholes_price(S: float, K: float, r: float, q: float,
+                        sigma: float, T: float, option_type: str) -> float:
+    """
+    Claculates the theoretical price of a European call or put option
+    using the Black-Scholes model.
+
+    Args:
+        - S (float): current SPX level (spot price)
+        - K (float): strike price
+        - r (float): risk-free rate (decimal, e.g. 0.043)
+        - q (float): dividend yield (decimal, e.g. 0.015)
+        - sigma (float): implied volatility (decimal, e.g. 0.18)
+        - T (float): time to expiration in years (days/365)
+        - option_type (str): "call" or "put"
+    Returns:
+        - float: theoretical option price
+    
+    """
+    if T <= 0:
+        if option_type == "call":
+            return max(S - K, 0)
+        else:
+            return(K - S, 0)
+    
+    # d1 and d2 computation
+    d1 = (np.log(S/K) + (r - q + 0.5*sigma**2)*T)/(sigma*np.sqrt(T))
+    d2 = d1 - sigma*np.sqrt(T) 
+
+    if option_type == "call":
+        price = (S*np.exp(-q*T)*norm.cdf(d1) - K*np.exp(-r*T)* norm.cdf(d2))
+    else:
+        price = (K*np.exp(-r*T)*norm.cdf(-d2) - S*np.exp(-q*T)*norm.cdf(-d1))
+
+    return round(price, 2)
+    
 # -----------------------------------------------
 # CACHED SPX FETCH (outside the class)
 # -----------------------------------------------
@@ -28,6 +68,23 @@ def fetch_spx_level() -> float:
             time.sleep(2)
     return None
 
+@st.cache_data(ttl = 900)
+def fetch_vix_level() -> float:
+    """
+    Fetches the latest VIX closing level from yahoo finance.
+    VIX is used as a proxy for SPX implied volatility. 
+    """
+    for attempt in range(3):
+        try:
+            vix_ticker = yf.Ticker("^VIX")
+            vix_history = vix_ticker.history(period = "1d")
+            if not vix_history.empty:
+                return round(vix_history["Close"].iloc[-1]/100, 4)
+        except Exception:
+            time.sleep(2)
+    # fallback to 20% if fetch fails
+    return 0.20
+            
 
 # -----------------------------------------------
 # SHARED INPUT CONTAINER
@@ -51,6 +108,10 @@ class YieldHawkInputs:
         self.cost_per_contract = cost_per_contract
         self.contract_multiplier = contract_multiplier
         self.num_scenarios = num_scenarios
+        self.q = 0.015 # 1.5% annual dividend yield
+        # Implied volatility
+        with st.spinner("Fetching live VIX level..."):
+            self.sigma = fetch_vix_level()
 
         # Auto-calculate valuation date and day count
         self.valuation_date = date.today()
@@ -221,10 +282,8 @@ def option_legs(inputs: YieldHawkInputs, cashflows: dict) -> dict:
     lower_strike = (int(inputs.spx_level)//inputs.spread_width)*inputs.spread_width
     upper_strike = lower_strike + inputs.spread_width
 
-    # Premium per leg
-    proceeds_today = cashflows["Proceeds Received Today ($)"]
-    net_per_spread = proceeds_today/inputs.num_spreads
-    net_per_contract = net_per_spread/inputs.contract_multiplier
+    # Time to expiration in years
+    T = inputs.days/365
 
     legs = {
         "SPX Put (Short)": {
@@ -232,28 +291,40 @@ def option_legs(inputs: YieldHawkInputs, cashflows: dict) -> dict:
             "type": "Put",
             "strike": upper_strike,
             "contracts": int(-inputs.num_spreads),
-            "premium": round(net_per_contract * 0.03, 2),
+            "premium": black_scholes_price(
+                inputs.spx_level, upper_strike, 
+                inputs.hawk_rate, inputs.q, 
+                inputs.sigma, T, "put")
         },
         "SPX Call (Short)": {
             "action": "Sell",
             "type": "Call",
             "strike": lower_strike,
             "contracts": int(-inputs.num_spreads),
-            "premium": round(net_per_contract * 0.13, 2),
+            "premium": black_scholes_price(
+                inputs.spx_level, lower_strike, 
+                inputs.hawk_rate, inputs.q, 
+                inputs.sigma, T, "call"),
         },
         "SPX Put (Long)": {
             "action": "Buy",
             "type": "Put",
             "strike": lower_strike,
             "contracts": int(inputs.num_spreads),
-            "premium": round(net_per_contract * 0.30, 2),
+            "premium": black_scholes_price(
+                inputs.spx_level, lower_strike, 
+                inputs.hawk_rate, inputs.q, 
+                inputs.sigma, T, "put"),
         },
         "SPX Call (Long)": {
             "action": "Buy",
             "type": "Call",
             "strike": upper_strike,
             "contracts": int(inputs.num_spreads),
-            "premium": round(net_per_contract * 0.54, 2),
+            "premium": black_scholes_price(
+                inputs.spx_level, upper_strike, 
+                inputs.hawk_rate, inputs.q, 
+                inputs.sigma, T, "call"),
         },
     }
 

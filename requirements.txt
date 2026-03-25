@@ -16,5 +16,9 @@ yfinance >= 0.2.40
 pandas >= 2.2.0
 numpy >= 1.26.0
 
+# --- Statistical Analysis ---
+scipy >= 1.17.1
+
+
 # --- Excel / Reporting (optional, for future exports) ---
 openpyxl >= 3.1.2
