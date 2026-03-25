@@ -25,9 +25,12 @@ notional = st.sidebar.number_input(
     value = 1_000_000, step = 10_000
 )
 
-days = st.sidebar.slider(
-    "Borrowing Period (days)",
-    min_value = 1, max_value = 365, value = 50, step = 1
+expiration_date = st.sidebar.date_input(
+    "Expiration Date", 
+    value = date.today() + timedelta(days = 50), 
+    min_value = date.today() + timedelta(days = 1), 
+    max_value = date.today() + timedelta(days = 1825),
+    help = "Select the options expiration date. Day count is calculated automatically."
 )
 
 st.sidebar.divider()
@@ -49,10 +52,10 @@ else:
 # -----------------------------------------------
 inputs = YieldHawkInputs(
     notional = notional,
-    current_rate = 7 / 100,
-    hawk_rate = 4.3 / 100,
-    advisory_rate = 0.25 / 100,
-    days = days,
+    current_rate = 7/100,
+    hawk_rate = 4.3/100,
+    advisory_rate = 0.25/100,
+    expiration_date = expiration_date,
     spread_width = 1_000,
     cost_per_contract = 0.01,
     contract_multiplier = 100,

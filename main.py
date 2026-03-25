@@ -2,6 +2,7 @@
 # YIELD HAWK SIMULATOR 
 # =================================================================
 import streamlit as st
+from datetime import date, timedelta
 from yield_hawk_simulation import (YieldHawkInputs,
                                    fetch_spx_level, 
                                    inp_assumps,
@@ -26,17 +27,22 @@ notional = st.sidebar.number_input(
     value = 1_000_000, step = 10_000
 )
 
-days = st.sidebar.number_input(
-    "Borrowing Period (days)", 
-    min_value = 1, max_value = 365, value = 50, step = 1
+expiration_date = st.sidebar.date_input(
+    "Expiration Date", 
+    value = date.today() + timedelta(days = 50), 
+    min_value = date.today() + timedelta(days = 1), 
+    max_value = date.today() + timedelta(days = 1825),
+    help = "Select the options expiration date. Day count is calculated automatically."
 )
-
 
 num_scenarios = st.sidebar.slider(
     "Number of Scenarios",
     min_value = 3, max_value = 10, value = 5, step = 1 
 )
 
+# -----------------------------------------------
+# SIDEBAR — Tax Rate Inputs          
+# -----------------------------------------------
 st.sidebar.subheader("Tax Rates")
 lt_cap_gains_rate = st.sidebar.number_input(
     "Long-Term Cap Gains Rate (decimal)", 
@@ -46,6 +52,7 @@ st_cap_gains_rate = st.sidebar.number_input(
     "Short-Term Cap Gains Rate (decimal)", 
     min_value = 0.10, max_value = 0.60, value = 0.37, step = 0.5
     )
+
 # -----------------------------------------------
 # SPX LEVEL - Live Fecthed with manual fallback
 # -----------------------------------------------
@@ -70,7 +77,7 @@ inputs = YieldHawkInputs(
     current_rate = 7/100,
     hawk_rate = 4.3/100,
     advisory_rate = 0.25/100,
-    days = days,
+    expiration_date = expiration_date,
     spread_width = 1000,
     cost_per_contract = 0.01,
     contract_multiplier = 100,
