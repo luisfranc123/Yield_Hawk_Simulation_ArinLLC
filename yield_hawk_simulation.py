@@ -36,7 +36,7 @@ def black_scholes_price(S: float, K: float, r: float, q: float,
         if option_type == "call":
             return max(S - K, 0)
         else:
-            return(K - S, 0)
+            return max(K - S, 0)
     
     # d1 and d2 computation
     d1 = (np.log(S/K) + (r - q + 0.5*sigma**2)*T)/(sigma*np.sqrt(T))
