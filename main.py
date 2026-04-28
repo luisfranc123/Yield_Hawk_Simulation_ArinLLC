@@ -14,11 +14,11 @@ st.set_page_config(page_title="Yield Hawk Simulator", layout="wide")
 
 st.markdown("""
 <style>
-    /* Headings — Segoe UI Bold, Sky Blue on dark background */
+    /* Headings — Segoe UI Bold, White on dark background */
     h1, h2, h3, h4, h5, h6 {
         font-family: 'Segoe UI', Arial, sans-serif !important;
         font-weight: 700 !important;
-        color: #1B8FFB !important;
+        color: #FFFFFF !important;
     }
     /* Body text — Calibri, white on dark background */
     body, p, label,
@@ -27,10 +27,16 @@ st.markdown("""
         font-family: Calibri, Georgia, sans-serif !important;
         color: #FFFFFF;
     }
-    /* Preserve Material Icons font for all icon elements */
+    /* Hide multi-page nav (functionality moved into tabs) */
+    [data-testid="stSidebarNav"] {
+        display: none !important;
+    }
+    /* Preserve Material Icons for ALL button spans site-wide */
+    button span, header span,
     [data-testid="stExpanderToggleIcon"] span,
     [data-testid="collapsedControl"] span,
     [data-testid="stSidebarCollapseButton"] span,
+    [data-testid="stSidebar"] button span,
     .material-icons, span.material-icons {
         font-family: 'Material Icons' !important;
         color: #FFFFFF !important;
@@ -61,6 +67,30 @@ st.markdown("""
     [data-testid="stCaptionContainer"] {
         color: #80807F !important;
         font-family: Calibri, Georgia, sans-serif !important;
+    }
+    /* Tabs — inactive gray, active Sky Blue with underline */
+    .stTabs [data-baseweb="tab"] {
+        font-family: 'Segoe UI', Arial, sans-serif !important;
+        font-weight: 600 !important;
+        color: #80807F !important;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #1B8FFB !important;
+    }
+    .stTabs [data-baseweb="tab-highlight"] {
+        background-color: #1B8FFB !important;
+    }
+    .stTabs [data-baseweb="tab-border"] {
+        background-color: #0A1F38 !important;
+    }
+    /* Alert / info / success messages — brand dark with Sky Blue border */
+    [data-testid="stAlert"] {
+        background-color: #0A1F38 !important;
+        border-left-color: #1B8FFB !important;
+        color: #FFFFFF !important;
+    }
+    [data-testid="stAlert"] p {
+        color: #FFFFFF !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -154,16 +184,18 @@ inputs = YieldHawkInputs(
     spx_override = spx_override, 
 )
 
-st.divider()
 cashflows = cash_flow_calc(inputs)
-st.divider()
-comparison = savings_comparison(inputs, cashflows)
-st.divider()
-report = final_report(inputs, cashflows, comparison,
-                      lt_cap_gains_rate, st_cap_gains_rate)
-st.divider()
 
-with st.expander("Technical Details — Option Legs & Scenario Analysis"):
+tab1, tab2, tab3 = st.tabs(["▲ Strategy Comparison", "◈ Tax Analysis", "◎ Option Details"])
+
+with tab1:
+    comparison = savings_comparison(inputs, cashflows)
+
+with tab2:
+    report = final_report(inputs, cashflows, comparison,
+                          lt_cap_gains_rate, st_cap_gains_rate)
+
+with tab3:
     legs = option_legs(inputs, cashflows)
     scenario_analysis(inputs, legs, cashflows)
 
