@@ -4,15 +4,59 @@
 import streamlit as st
 from datetime import date, timedelta
 from yield_hawk_simulation import (YieldHawkInputs,
-                                   fetch_spx_level, 
-                                   inp_assumps,
                                    cash_flow_calc,
                                    savings_comparison,
                                    option_legs,
-                                   scenario_analysis, 
+                                   scenario_analysis,
                                    final_report)
 
-st.set_page_config(page_title = "Yield Hawk Simulator", layout = "wide")
+st.set_page_config(page_title="Yield Hawk Simulator", layout="wide")
+
+st.markdown("""
+<style>
+    /* Headings — Segoe UI Bold, Sky Blue on dark background */
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Segoe UI', Arial, sans-serif !important;
+        font-weight: 700 !important;
+        color: #1B8FFB !important;
+    }
+    /* Body text — Calibri, white on dark background */
+    body, p, label, span, div,
+    [data-testid="stMarkdownContainer"] p,
+    [data-testid="stDataFrame"] {
+        font-family: Calibri, Georgia, sans-serif !important;
+        color: #FFFFFF;
+    }
+    /* Sidebar typography */
+    [data-testid="stSidebar"] * {
+        font-family: Calibri, Georgia, sans-serif !important;
+        color: #FFFFFF !important;
+    }
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3 {
+        font-family: 'Segoe UI', Arial, sans-serif !important;
+        font-weight: 700 !important;
+        color: #1B8FFB !important;
+    }
+    /* Metric labels — Sky Blue */
+    [data-testid="stMetricLabel"] {
+        font-family: 'Segoe UI', Arial, sans-serif !important;
+        font-weight: 600 !important;
+        color: #1B8FFB !important;
+    }
+    /* Metric values — white */
+    [data-testid="stMetricValue"] {
+        color: #FFFFFF !important;
+    }
+    /* Disclaimer caption — Neutral Gray */
+    [data-testid="stCaptionContainer"] {
+        color: #80807F !important;
+        font-family: Calibri, Georgia, sans-serif !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 st.title("YIELD HAWK STRATEGY SIMULATOR")
 st.caption("Based on Arin Risk Advisors, LLC — Box Spread Financing Strategy")
 
@@ -41,17 +85,34 @@ num_scenarios = st.sidebar.slider(
 )
 
 # -----------------------------------------------
-# SIDEBAR — Tax Rate Inputs          
+# SIDEBAR — Borrowing Rates
+# -----------------------------------------------
+st.sidebar.subheader("Borrowing Rates")
+current_rate = st.sidebar.number_input(
+    "Alternative Borrowing Rate (%)",
+    min_value=1.0, max_value=20.0, value=7.0, step=0.25
+) / 100
+hawk_rate = st.sidebar.number_input(
+    "Yield Hawk Gross Rate (%)",
+    min_value=1.0, max_value=15.0, value=4.30, step=0.05
+) / 100
+advisory_rate = st.sidebar.number_input(
+    "Arin Advisory Fee (%)",
+    min_value=0.0, max_value=2.0, value=0.25, step=0.05
+) / 100
+
+# -----------------------------------------------
+# SIDEBAR — Tax Rate Inputs
 # -----------------------------------------------
 st.sidebar.subheader("Tax Rates")
 lt_cap_gains_rate = st.sidebar.number_input(
-    "Long-Term Cap Gains Rate (decimal)", 
-    min_value = 0.10, max_value = 0.60, value = 0.20, step = 0.5
-    )
+    "Long-Term Cap Gains Rate (%)",
+    min_value=10.0, max_value=60.0, value=20.0, step=1.0
+) / 100
 st_cap_gains_rate = st.sidebar.number_input(
-    "Short-Term Cap Gains Rate (decimal)", 
-    min_value = 0.10, max_value = 0.60, value = 0.37, step = 0.5
-    )
+    "Short-Term Cap Gains Rate (%)",
+    min_value=10.0, max_value=60.0, value=37.0, step=1.0
+) / 100
 
 # -----------------------------------------------
 # SPX LEVEL - Live Fecthed with manual fallback
@@ -74,9 +135,9 @@ else:
 # -----------------------------------------------
 inputs = YieldHawkInputs(
     notional = notional,
-    current_rate = 7/100,
-    hawk_rate = 4.3/100,
-    advisory_rate = 0.25/100,
+    current_rate = current_rate,
+    hawk_rate = hawk_rate,
+    advisory_rate = advisory_rate,
     expiration_date = expiration_date,
     spread_width = 1000,
     cost_per_contract = 0.01,
@@ -85,14 +146,20 @@ inputs = YieldHawkInputs(
     spx_override = spx_override, 
 )
 
-# Define Option legs to compute scenarios
 st.divider()
 cashflows = cash_flow_calc(inputs)
 st.divider()
 comparison = savings_comparison(inputs, cashflows)
 st.divider()
-legs = option_legs(inputs, cashflows)
-scenarios  = scenario_analysis(inputs, legs, cashflows)
-st.divider()
-report = final_report(inputs, cashflows, comparison, 
+report = final_report(inputs, cashflows, comparison,
                       lt_cap_gains_rate, st_cap_gains_rate)
+st.divider()
+
+with st.expander("Technical Details — Option Legs & Scenario Analysis"):
+    legs = option_legs(inputs, cashflows)
+    scenario_analysis(inputs, legs, cashflows)
+
+st.caption(
+    "*Results are estimates for illustrative purposes only and may vary "
+    "based on market conditions and individual circumstances.*"
+)

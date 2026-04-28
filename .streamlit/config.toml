@@ -1,0 +1,6 @@
+[theme]
+primaryColor             = "#1B8FFB"   # Sky Blue — accents, links, interactive elements
+backgroundColor          = "#0D2948"   # Deep Navy — main content area
+secondaryBackgroundColor = "#0A1F38"   # Darker Navy — sidebar, cards, expanders
+textColor                = "#FFFFFF"   # White — all text on dark surfaces
+font                     = "sans serif"

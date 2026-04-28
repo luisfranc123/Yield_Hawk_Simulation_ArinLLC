@@ -203,17 +203,18 @@ def cash_flow_calc(inputs: YieldHawkInputs) -> dict:
         "Total All-In Financing Cost ($)": round(total_cost, 2),
         "All-In Annualized Rate (%)": round(allin_rate * 100, 4),
     }
-    st.subheader("Cash Flow Summary")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Proceeds Today", f"${proceeds_today:,.2f}")
-    col2.metric("Total Financing Cost", f"${total_cost:,.2f}")
-    col3.metric("All-In Rate (ann.)", f"{allin_rate*100:.4f}%")
+    with st.expander("Cash Flow Detail"):
+        st.subheader("Cash Flow Summary")
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Proceeds Today", f"${proceeds_today:,.2f}")
+        col2.metric("Total Financing Cost", f"${total_cost:,.2f}")
+        col3.metric("All-In Rate (ann.)", f"{allin_rate*100:.4f}%")
 
-    df = pd.DataFrame(
-        [(k, f"${v:,.2f}" if "$" in k else f"{v}") for k, v in list(cashflows.items())[2:]],
-        columns=["Item", "Value"]
-    )
-    st.dataframe(df, use_container_width=True, hide_index=True)
+        df = pd.DataFrame(
+            [(k, f"${v:,.2f}" if "$" in k else f"{v}") for k, v in list(cashflows.items())[2:]],
+            columns=["Item", "Value"]
+        )
+        st.dataframe(df, use_container_width=True, hide_index=True)
 
     return cashflows
 
@@ -256,12 +257,18 @@ def savings_comparison(inputs: YieldHawkInputs, cashflows: dict) -> dict:
         "Annual Savings ($)": round(savings_annual, 2),
     }
 
-    st.subheader("Savings Comparison")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Rate Savings", f"{savings_rate*100:.4f}%",
-                delta=f"-{savings_rate*100:.2f}% vs current")
-    col2.metric("Period Savings", f"${savings_period:,.2f}")
-    col3.metric("Annual Savings", f"${savings_annual:,.2f}")
+    st.subheader("Strategy Comparison")
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Cost — Alternative", f"${current_cost_period:,.0f}")
+    col2.metric("Cost — Yield Hawk", f"${hawk_cost_period:,.0f}")
+    col3.metric("Estimated Savings", f"${savings_period:,.0f}")
+    col4.metric("Equivalent Rate (ann.)", f"{hawk_rate_annual*100:.2f}%")
+
+    chart_data = pd.DataFrame({
+        "Strategy": ["Alternative Lender", "Yield Hawk (Arin)"],
+        "Financing Cost ($)": [round(current_cost_period, 2), round(hawk_cost_period, 2)]
+    })
+    st.bar_chart(chart_data.set_index("Strategy"), horizontal = True, color = "#0084ff86")
 
     return comparison
 
@@ -430,7 +437,7 @@ def final_report(inputs: YieldHawkInputs,
     st.subheader("Final Report (Tax-Adjusted)")
     col1, col2, col3 = st.columns(3)
     col1.metric("Gross Rate", f"{gross_rate*100:.4f}%")
-    col2.metric("After-Tax Rate", f"{aftertax_rate*100:.4f}%")
+    col2.metric("Equivalent After-Tax Rate", f"{aftertax_rate*100:.4f}%")
     col3.metric("After-Tax Ann. Savings", f"${aftertax_savings:,.2f}")
 
     df = pd.DataFrame(
