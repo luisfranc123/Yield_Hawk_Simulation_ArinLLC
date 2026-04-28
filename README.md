@@ -21,7 +21,7 @@ In this section, we need to figure out three thins:
 2. **How much you owe at expiration**: the fixed obligation (always the full notional).
 3. **What the financing actually costs**: broke down per period and annualized.
 
-The key fprmula is the same logic as a zero-coupon bond. The clien receives less than face cvalue today, and repay the full cface value latr. The difference, annualized, is the client's borrowing rate. 
+The key formula is based on the same logic as a zero-coupon bond. The customer receives an amount today that is less than the face value and later repays the full face value. The difference, expressed on an annual basis, constitutes the interest rate paid by the customer.
 
 #### **3. Side-by-Side Savings Comparison**
 
