@@ -21,11 +21,19 @@ st.markdown("""
         color: #1B8FFB !important;
     }
     /* Body text — Calibri, white on dark background */
-    body, p, label, span, div,
+    body, p, label,
     [data-testid="stMarkdownContainer"] p,
     [data-testid="stDataFrame"] {
         font-family: Calibri, Georgia, sans-serif !important;
         color: #FFFFFF;
+    }
+    /* Preserve Material Icons font for all icon elements */
+    [data-testid="stExpanderToggleIcon"] span,
+    [data-testid="collapsedControl"] span,
+    [data-testid="stSidebarCollapseButton"] span,
+    .material-icons, span.material-icons {
+        font-family: 'Material Icons' !important;
+        color: #FFFFFF !important;
     }
     /* Sidebar typography */
     [data-testid="stSidebar"] * {
