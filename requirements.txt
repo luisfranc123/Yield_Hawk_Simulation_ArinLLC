@@ -17,8 +17,10 @@ pandas >= 2.2.0
 numpy >= 1.26.0
 
 # --- Statistical Analysis ---
-scipy >= 1.17.1
+scipy >= 1.11.0
 
+# --- HTTP (SOFR fetch from NY Fed) ---
+requests >= 2.28.0
 
 # --- Excel / Reporting (optional, for future exports) ---
 openpyxl >= 3.1.2

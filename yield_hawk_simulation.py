@@ -89,17 +89,30 @@ def fetch_vix_level() -> float:
 @st.cache_data(ttl=86400)  # SOFR updates once daily
 def fetch_sofr_rate() -> float:
     """
-    Fetches the latest SOFR rate from the NY Fed public API.
-    Falls back to None if the request fails (caller handles fallback).
+    Fetches the latest SOFR rate.
+    Primary: NY Fed secured rates API.
+    Fallback: FRED CSV (no API key required).
+    Returns None if both fail (caller handles manual input).
     """
+    import requests
     try:
-        import requests
         r = requests.get(
-            "https://markets.newyorkfed.org/api/rates/sofr/last/1.json",
-            timeout=5
+            "https://markets.newyorkfed.org/api/rates/secured/sofr/last/1.json",
+            timeout = 5
         )
         r.raise_for_status()
-        return round(r.json()["refRates"][0]["percentRate"] / 100, 4)
+        return round(r.json()["refRates"][0]["percentRate"]/100, 4)
+    except Exception:
+        pass
+    try:
+        resp = requests.get(
+            "https://fred.stlouisfed.org/graph/fredgraph.csv?id=SOFR",
+            timeout = 5
+        )
+        resp.raise_for_status()
+        last_line = [l for l in resp.text.strip().splitlines()
+                     if not l.startswith("DATE") and "." in l][-1]
+        return round(float(last_line.split(",")[1])/100, 4)
     except Exception:
         return None
 
@@ -286,7 +299,7 @@ def savings_comparison(inputs: YieldHawkInputs, cashflows: dict) -> dict:
     col4.metric("Equivalent Rate (ann.)", f"{hawk_rate_annual*100:.2f}%")
 
     chart_data = pd.DataFrame({
-        "Strategy": [sbl_label, "Yield Hawk (Arin)"],
+        "Strategy": ["SBL", "Arin"],
         "Financing Cost ($)": [round(current_cost_period, 2), round(hawk_cost_period, 2)]
     })
     st.bar_chart(chart_data.set_index("Strategy"), horizontal=True, color="#0084ff86")
