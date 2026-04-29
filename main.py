@@ -4,13 +4,17 @@
 import streamlit as st
 from datetime import date, timedelta
 from yield_hawk_simulation import (YieldHawkInputs,
+                                   fetch_sofr_rate,
                                    cash_flow_calc,
                                    savings_comparison,
                                    option_legs,
                                    scenario_analysis,
                                    final_report)
 
-st.set_page_config(page_title="Yield Hawk Simulator", layout="wide")
+st.set_page_config(page_title="Yield Hawk Simulator", 
+                   layout="wide", 
+                   initial_sidebar_state = "expanded", 
+                   menu_items = None)
 
 st.markdown("""
 <style>
@@ -92,8 +96,37 @@ st.markdown("""
     [data-testid="stAlert"] p {
         color: #FFFFFF !important;
     }
+    /* NEW: Fix overlapping text issues */
+    .stApp header {
+        display: none !important;
+    }
+    
+    /* Remove the default "Manage app" button and any floating menus */
+    [data-testid="stStatusWidget"] {
+        display: none !important;
+    }
+    
+    /* Ensure main content starts at top with proper spacing */
+    .main .block-container {
+        padding-top: 2rem !important;
+    }
+    
+    /* Remove any deployment/menu icons in top-right */
+    .stApp button[title="Manage app"] {
+        display: none !important;
+    }
+    
+    /* Hide Streamlit's default "Deploy" button */
+    .stApp .st-emotion-cache-1v0mbdj {
+        display: none !important;
+    }
+    
+    /* Additional fix for any floating elements */
+    [data-testid="baseButton-header"] {
+        display: none !important;
+    }
 </style>
-""", unsafe_allow_html=True)
+""", unsafe_allow_html = True)
 
 st.title("YIELD HAWK STRATEGY SIMULATOR")
 st.caption("Based on Arin Risk Advisors, LLC — Box Spread Financing Strategy")
@@ -123,13 +156,36 @@ num_scenarios = st.sidebar.slider(
 )
 
 # -----------------------------------------------
-# SIDEBAR — Borrowing Rates
+# SIDEBAR — SBL Rate (SOFR-Based)
 # -----------------------------------------------
-st.sidebar.subheader("Borrowing Rates")
-current_rate = st.sidebar.number_input(
-    "Alternative Borrowing Rate (%)",
-    min_value=1.0, max_value=20.0, value=7.0, step=0.25
+st.sidebar.subheader("SBL Rate (SOFR-Based)")
+
+with st.spinner("Fetching SOFR rate..."):
+    fetched_sofr = fetch_sofr_rate()
+
+use_manual_sofr = st.sidebar.toggle(
+    "Enter SOFR manually",
+    value=(fetched_sofr is None)
+)
+
+if use_manual_sofr or fetched_sofr is None:
+    sofr_rate = st.sidebar.number_input(
+        "SOFR Rate (%)",
+        min_value=0.0, max_value=15.0, value=5.30, step=0.05
+    ) / 100
+else:
+    sofr_rate = fetched_sofr
+    st.sidebar.metric("Live SOFR", f"{sofr_rate*100:.2f}%")
+
+sbl_spread = st.sidebar.number_input(
+    "SBL Spread over SOFR (%)",
+    min_value=0.25, max_value=5.0, value=1.50, step=0.25
 ) / 100
+
+# -----------------------------------------------
+# SIDEBAR — Yield Hawk Rates
+# -----------------------------------------------
+st.sidebar.subheader("Yield Hawk Rates")
 hawk_rate = st.sidebar.number_input(
     "Yield Hawk Gross Rate (%)",
     min_value=1.0, max_value=15.0, value=4.30, step=0.05
@@ -173,7 +229,8 @@ else:
 # -----------------------------------------------
 inputs = YieldHawkInputs(
     notional = notional,
-    current_rate = current_rate,
+    sofr_rate = sofr_rate,
+    sbl_spread = sbl_spread,
     hawk_rate = hawk_rate,
     advisory_rate = advisory_rate,
     expiration_date = expiration_date,

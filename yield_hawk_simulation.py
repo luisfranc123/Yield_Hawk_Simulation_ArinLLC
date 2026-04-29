@@ -84,14 +84,31 @@ def fetch_vix_level() -> float:
             time.sleep(2)
     # fallback to 20% if fetch fails
     return 0.20
-            
+
+
+@st.cache_data(ttl=86400)  # SOFR updates once daily
+def fetch_sofr_rate() -> float:
+    """
+    Fetches the latest SOFR rate from the NY Fed public API.
+    Falls back to None if the request fails (caller handles fallback).
+    """
+    try:
+        import requests
+        r = requests.get(
+            "https://markets.newyorkfed.org/api/rates/sofr/last/1.json",
+            timeout=5
+        )
+        r.raise_for_status()
+        return round(r.json()["refRates"][0]["percentRate"] / 100, 4)
+    except Exception:
+        return None
 
 # -----------------------------------------------
 # SHARED INPUT CONTAINER
 # -----------------------------------------------
 class YieldHawkInputs:
-    def __init__(self, notional, current_rate,
-                 hawk_rate, advisory_rate, 
+    def __init__(self, notional, sofr_rate, sbl_spread,
+                 hawk_rate, advisory_rate,
                  expiration_date,
                  spread_width = 1_000,
                  cost_per_contract = 0.01,
@@ -100,7 +117,9 @@ class YieldHawkInputs:
                  spx_override = None):
 
         self.notional = notional
-        self.current_rate = current_rate
+        self.sofr_rate = sofr_rate
+        self.sbl_spread = sbl_spread
+        self.current_rate = sofr_rate + sbl_spread   # SBL all-in rate
         self.hawk_rate = hawk_rate
         self.advisory_rate = advisory_rate
         self.expiration_date = expiration_date
@@ -245,30 +264,32 @@ def savings_comparison(inputs: YieldHawkInputs, cashflows: dict) -> dict:
     savings_annual = current_cost_annual - hawk_cost_annual
     savings_rate = inputs.current_rate - hawk_rate_annual
 
+    sbl_label = f"SBL (SOFR {inputs.sofr_rate*100:.2f}% + {inputs.sbl_spread*100:.2f}%)"
+
     comparison = {
-        "Financing Rate — Current (%)" : round(inputs.current_rate * 100, 2),
+        f"Financing Rate — {sbl_label} (%)": round(inputs.current_rate * 100, 2),
         "Financing Rate — Yield Hawk (%)": round(hawk_rate_annual * 100, 4),
         "Rate Savings (%)": round(savings_rate * 100, 4),
-        "Cost (Period) — Current ($)": round(current_cost_period, 2),
+        f"Cost (Period) — {sbl_label} ($)": round(current_cost_period, 2),
         "Cost (Period) — Yield Hawk ($)": round(hawk_cost_period, 2),
         "Savings per Period ($)": round(savings_period, 2),
-        "Cost (Annual) — Current ($)": round(current_cost_annual, 2),
+        f"Cost (Annual) — {sbl_label} ($)": round(current_cost_annual, 2),
         "Cost (Annual) — Yield Hawk ($)": round(hawk_cost_annual, 2),
         "Annual Savings ($)": round(savings_annual, 2),
     }
 
     st.subheader("Strategy Comparison")
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Cost — Alternative", f"${current_cost_period:,.0f}")
-    col2.metric("Cost — Yield Hawk", f"${hawk_cost_period:,.0f}")
-    col3.metric("Estimated Savings", f"${savings_period:,.0f}")
+    col1.metric(f"Cost — {sbl_label}", f"${current_cost_period:,.0f}")
+    col2.metric("Cost — Yield Hawk",   f"${hawk_cost_period:,.0f}")
+    col3.metric("Estimated Savings",   f"${savings_period:,.0f}")
     col4.metric("Equivalent Rate (ann.)", f"{hawk_rate_annual*100:.2f}%")
 
     chart_data = pd.DataFrame({
-        "Strategy": ["Alternative Lender", "Yield Hawk (Arin)"],
+        "Strategy": [sbl_label, "Yield Hawk (Arin)"],
         "Financing Cost ($)": [round(current_cost_period, 2), round(hawk_cost_period, 2)]
     })
-    st.bar_chart(chart_data.set_index("Strategy"), horizontal = True, color = "#0084ff86")
+    st.bar_chart(chart_data.set_index("Strategy"), horizontal=True, color="#0084ff86")
 
     return comparison
 
@@ -425,7 +446,7 @@ def final_report(inputs: YieldHawkInputs,
     aftertax_cost_annual = inputs.notional*aftertax_rate
 
     # After-tax savings vs current rate
-    current_cost_annual  = comparison["Cost (Annual) — Current ($)"]
+    current_cost_annual = comparison["Cost (Annual) — Yield Hawk ($)"]
     aftertax_savings = current_cost_annual - aftertax_cost_annual
 
     tax_report = {
